@@ -10,7 +10,7 @@ const MEDIA_FOLDER_NAME = "ZIET Mumbai Workshop Feedback Media";
 
 const HEADERS = [
   "Submitted At", "Participant Name", "KV Name", "Designation", "KVS Region",
-  "Workshop", "Session Date", "Session Title", "Resource Person",
+  "Workshop", "Session Date", "Session Title", "Resource Person", "Guest Presenter Organization",
   "Relevance (1-5)", "Clarity (1-5)", "Subject Knowledge (1-5)",
   "Pedagogy (1-5)", "Engagement (1-5)", "Application (1-5)",
   "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well",
@@ -28,7 +28,7 @@ function doPost(e) {
     const data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
     const required = [
       "participant", "kvName", "designation", "region", "workshop",
-      "sessionDate", "session", "resourcePerson", "learning",
+      "sessionDate", "session", "resourcePerson", "presenterOrganization", "learning",
       "implementation", "skillAcquisition", "skillsDescription", "overall"
     ];
     const missing = required.filter(k => !String(data[k] == null ? "" : data[k]).trim());
@@ -68,6 +68,7 @@ function doPost(e) {
       "Session Date": safeText_(data.sessionDate),
       "Session Title": safeText_(data.session),
       "Resource Person": safeText_(data.resourcePerson),
+      "Guest Presenter Organization": safeText_(data.presenterOrganization),
       "Relevance (1-5)": Number(r.relevance),
       "Clarity (1-5)": Number(r.clarity),
       "Subject Knowledge (1-5)": Number(r.knowledge),
@@ -164,7 +165,7 @@ function createFeedbackPdf_(data, folder) {
   const fields = [
     ["Participant Name", data.participant], ["KV Name", data.kvName], ["Designation", data.designation],
     ["KVS Region", data.region], ["Workshop", data.workshop], ["Session Date", data.sessionDate],
-    ["Session Title", data.session], ["Resource Person", data.resourcePerson]
+    ["Session Title", data.session], ["Resource Person", data.resourcePerson], ["Guest Presenter Organization", data.presenterOrganization]
   ];
   fields.forEach(pair => { body.appendParagraph(pair[0]).setBold(true); body.appendParagraph(String(pair[1] || "—")); });
   body.appendParagraph("SESSION RATINGS (1–5)").setHeading(DocumentApp.ParagraphHeading.HEADING1);
