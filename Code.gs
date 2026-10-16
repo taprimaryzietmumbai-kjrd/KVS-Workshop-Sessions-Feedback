@@ -18,6 +18,7 @@ function doPost(e) {
     const missing = required.filter(k => !String(data[k] == null ? "" : data[k]).trim());
     if (missing.length) throw new Error("Missing required fields: " + missing.join(", "));
     if (!data.ratings || typeof data.ratings !== "object") throw new Error("Session ratings are required.");
+    if (!String(data.signature || "").startsWith("data:image/png;base64,")) throw new Error("Participant signature is required.");
     const ratingKeys = ["relevance", "clarity", "knowledge", "pedagogy", "engagement", "application", "materials"];
     ratingKeys.forEach(k => {
       const n = Number(data.ratings[k]);
@@ -28,7 +29,7 @@ function doPost(e) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     let sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-    const headers = ["Submitted At", "Participant Name", "KV Name", "Designation", "KVS Region", "Workshop", "Session Date", "Session Title", "Resource Person", "Relevance (1-5)", "Clarity (1-5)", "Subject Knowledge (1-5)", "Pedagogy (1-5)", "Engagement (1-5)", "Application (1-5)", "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well", "Suggestions for Improvement", "Follow-up Support"];
+    const headers = ["Submitted At", "Participant Name", "KV Name", "Designation", "KVS Region", "Workshop", "Session Date", "Session Title", "Resource Person", "Relevance (1-5)", "Clarity (1-5)", "Subject Knowledge (1-5)", "Pedagogy (1-5)", "Engagement (1-5)", "Application (1-5)", "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well", "Suggestions for Improvement", "Follow-up Support", "Participant Signature (PNG data URL)"];
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(headers);
       sheet.setFrozenRows(1);
