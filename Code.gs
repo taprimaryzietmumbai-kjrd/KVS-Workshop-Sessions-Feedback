@@ -16,7 +16,7 @@ const HEADERS = [
   "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well",
   "Suggestions for Improvement", "Follow-up Support", "Classroom Implementation Plan",
   "Skill Acquisition", "Skills Learned / Strengthened", "Participant Signature File",
-  "Participant Face Photo File"
+  "Participant Face Photo File", "Feedback PDF File"
 ];
 
 function doGet() {
@@ -88,9 +88,11 @@ function doPost(e) {
     };
 
     const headerRow = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    const pdf = createFeedbackPdf_(data, mediaFolder);
+    values["Feedback PDF File"] = pdf.fileUrl;
     const row = headerRow.map(header => Object.prototype.hasOwnProperty.call(values, header) ? values[header] : "");
     sheet.appendRow(row);
-    return json_({ success: true });
+    return json_({ success: true, pdfBase64: Utilities.base64Encode(pdf.bytes), pdfFileName: pdf.fileName });
   } catch (err) {
     return json_({ success: false, message: String(err && err.message || err) });
   }
@@ -146,4 +148,41 @@ function safeText_(value) {
 
 function json_(obj) {
   return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+}
+
+
+function createFeedbackPdf_(data, folder) {
+  const safeName = String(data.participant || "Participant").replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 60);
+  const fileName = "Session_Feedback_" + safeName + "_" + Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyyMMdd_HHmmss") + ".pdf";
+  const doc = DocumentApp.create("Temporary Feedback PDF - " + safeName);
+  const body = doc.getBody();
+  body.appendParagraph("KENDRIYA VIDYALAYA SANGATHAN").setHeading(DocumentApp.ParagraphHeading.HEADING2);
+  body.appendParagraph("ZIET MUMBAI").setHeading(DocumentApp.ParagraphHeading.HEADING2);
+  body.appendParagraph("WORKSHOP SESSION FEEDBACK").setHeading(DocumentApp.ParagraphHeading.TITLE);
+  body.appendParagraph("Submitted: " + new Date().toLocaleString());
+  body.appendHorizontalRule();
+  const fields = [
+    ["Participant Name", data.participant], ["KV Name", data.kvName], ["Designation", data.designation],
+    ["KVS Region", data.region], ["Workshop", data.workshop], ["Session Date", data.sessionDate],
+    ["Session Title", data.session], ["Resource Person", data.resourcePerson]
+  ];
+  fields.forEach(pair => { body.appendParagraph(pair[0]).setBold(true); body.appendParagraph(String(pair[1] || "—")); });
+  body.appendParagraph("SESSION RATINGS (1–5)").setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  const labels = {relevance:"Relevance", clarity:"Clarity", knowledge:"Subject Knowledge", pedagogy:"Pedagogy", engagement:"Engagement", application:"Application", materials:"Materials"};
+  Object.keys(labels).forEach(k => body.appendParagraph(labels[k] + ": " + String(data.ratings[k] || "—") + " / 5"));
+  body.appendParagraph("Overall Rating: " + String(data.overall || "—") + " / 5").setBold(true);
+  const comments = [
+    ["Key Learning", data.learning], ["What Worked Well", data.strengths],
+    ["Suggestions for Improvement", data.improve], ["Follow-up Support", data.support],
+    ["Classroom Implementation Plan", data.implementation],
+    ["Skill Acquisition", data.skillAcquisition], ["Skills Learned / Strengthened", data.skillsDescription]
+  ];
+  comments.forEach(pair => { body.appendParagraph(pair[0]).setBold(true); body.appendParagraph(String(pair[1] || "—")); });
+  body.appendParagraph("Participant signature: saved separately in the feedback media folder.");
+  if (data.facePhoto) body.appendParagraph("Participant face photo: saved separately in the feedback media folder.");
+  doc.saveAndClose();
+  const pdfBlob = DriveApp.getFileById(doc.getId()).getAs(MimeType.PDF).setName(fileName);
+  const pdfFile = folder.createFile(pdfBlob);
+  DriveApp.getFileById(doc.getId()).setTrashed(true);
+  return { fileUrl: pdfFile.getUrl(), fileName: fileName, bytes: pdfBlob.getBytes() };
 }
