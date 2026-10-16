@@ -179,8 +179,21 @@ function createFeedbackPdf_(data, folder) {
     ["Skill Acquisition", data.skillAcquisition], ["Skills Learned / Strengthened", data.skillsDescription]
   ];
   comments.forEach(pair => { body.appendParagraph(pair[0]).setBold(true); body.appendParagraph(String(pair[1] || "—")); });
-  body.appendParagraph("Participant signature: saved separately in the feedback media folder.");
-  if (data.facePhoto) body.appendParagraph("Participant face photo: saved separately in the feedback media folder.");
+  body.appendParagraph("PARTICIPANT PHOTO AND SIGNATURE").setHeading(DocumentApp.ParagraphHeading.HEADING1);
+  if (data.facePhoto) {
+    body.appendParagraph("Participant Face Photo").setBold(true);
+    const photoBlob = imageDataUrlToBlob_(data.facePhoto, "Participant_Face_Photo");
+    const photoImage = body.appendImage(photoBlob);
+    photoImage.setWidth(150);
+    photoImage.setHeight(150);
+  } else {
+    body.appendParagraph("Participant Face Photo: Not provided (optional).");
+  }
+  body.appendParagraph("Participant Signature").setBold(true);
+  const signatureBlob = imageDataUrlToBlob_(data.signature, "Participant_Signature");
+  const signatureImage = body.appendImage(signatureBlob);
+  signatureImage.setWidth(260);
+  signatureImage.setHeight(90);
   doc.saveAndClose();
   const pdfBlob = DriveApp.getFileById(doc.getId()).getAs(MimeType.PDF).setName(fileName);
   const pdfFile = folder.createFile(pdfBlob);
@@ -199,4 +212,13 @@ function authorizeDriveAccess() {
   const tempDoc = DocumentApp.create("ZIET Feedback PDF Authorization Check");
   DriveApp.getFileById(tempDoc.getId()).setTrashed(true);
   Logger.log("Drive and Google Docs authorization successful.");
+}
+
+
+function imageDataUrlToBlob_(dataUrl, fileName) {
+  const match = String(dataUrl || "").match(/^data:(image\/[a-zA-Z0-9.+-]+);base64,([A-Za-z0-9+/=]+)$/);
+  if (!match) throw new Error("Cannot add " + fileName + " to PDF: image data is invalid.");
+  const mime = match[1];
+  if (!/^image\/(png|jpeg|jpg|webp)$/.test(mime)) throw new Error("Unsupported image type for " + fileName + ".");
+  return Utilities.newBlob(Utilities.base64Decode(match[2]), mime, fileName);
 }
