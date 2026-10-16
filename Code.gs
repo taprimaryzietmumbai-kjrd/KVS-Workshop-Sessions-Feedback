@@ -14,7 +14,7 @@ function doGet() {
 function doPost(e) {
   try {
     const data = JSON.parse((e && e.postData && e.postData.contents) || "{}");
-    const required = ["participant", "kvName", "designation", "region", "workshop", "sessionDate", "session", "resourcePerson", "learning", "overall"];
+    const required = ["participant", "kvName", "designation", "region", "workshop", "sessionDate", "session", "resourcePerson", "learning", "implementation", "skillAcquisition", "skillsDescription", "overall"];
     const missing = required.filter(k => !String(data[k] == null ? "" : data[k]).trim());
     if (missing.length) throw new Error("Missing required fields: " + missing.join(", "));
     if (!data.ratings || typeof data.ratings !== "object") throw new Error("Session ratings are required.");
@@ -29,7 +29,7 @@ function doPost(e) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     let sheet = ss.getSheetByName(SHEET_NAME);
     if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-    const headers = ["Submitted At", "Participant Name", "KV Name", "Designation", "KVS Region", "Workshop", "Session Date", "Session Title", "Resource Person", "Relevance (1-5)", "Clarity (1-5)", "Subject Knowledge (1-5)", "Pedagogy (1-5)", "Engagement (1-5)", "Application (1-5)", "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well", "Suggestions for Improvement", "Follow-up Support", "Participant Signature (PNG data URL)"];
+    const headers = ["Submitted At", "Participant Name", "KV Name", "Designation", "KVS Region", "Workshop", "Session Date", "Session Title", "Resource Person", "Relevance (1-5)", "Clarity (1-5)", "Subject Knowledge (1-5)", "Pedagogy (1-5)", "Engagement (1-5)", "Application (1-5)", "Materials (1-5)", "Overall (1-5)", "Key Learning", "What Worked Well", "Suggestions for Improvement", "Follow-up Support", "Classroom Implementation Plan", "Skill Acquisition", "Skills Learned / Strengthened", "Participant Signature (PNG data URL)"];
     if (sheet.getLastRow() === 0) {
       sheet.appendRow(headers);
       sheet.setFrozenRows(1);
@@ -40,7 +40,8 @@ function doPost(e) {
       new Date(), safeCell_(data.participant), safeCell_(data.kvName), safeCell_(data.designation), safeCell_(data.region),
       safeCell_(data.workshop), safeCell_(data.sessionDate), safeCell_(data.session), safeCell_(data.resourcePerson),
       Number(r.relevance), Number(r.clarity), Number(r.knowledge), Number(r.pedagogy), Number(r.engagement), Number(r.application), Number(r.materials),
-      overall, safeCell_(data.learning), safeCell_(data.strengths), safeCell_(data.improve), safeCell_(data.support)
+      overall, safeCell_(data.learning), safeCell_(data.strengths), safeCell_(data.improve), safeCell_(data.support),
+      safeCell_(data.implementation), safeCell_(data.skillAcquisition), safeCell_(data.skillsDescription), safeCell_(data.signature)
     ]);
     return json_({ success: true });
   } catch (err) {
