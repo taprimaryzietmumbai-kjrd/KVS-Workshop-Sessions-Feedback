@@ -187,3 +187,16 @@ function createFeedbackPdf_(data, folder) {
   DriveApp.getFileById(doc.getId()).setTrashed(true);
   return { fileUrl: pdfFile.getUrl(), fileName: fileName, bytes: pdfBlob.getBytes() };
 }
+
+
+/**
+ * Run this once manually from the Apps Script editor to grant Drive and Docs permissions.
+ * After authorization, redeploy the web app as a new version.
+ */
+function authorizeDriveAccess() {
+  DriveApp.getRootFolder();
+  getMediaFolder_();
+  const tempDoc = DocumentApp.create("ZIET Feedback PDF Authorization Check");
+  DriveApp.getFileById(tempDoc.getId()).setTrashed(true);
+  Logger.log("Drive and Google Docs authorization successful.");
+}
